@@ -1,16 +1,58 @@
 from flask import Flask, render_template, request
+import forms
+from flask import g
+from flask import flash
+from flask_wtf.csrf import CSRFProtect
 
-app = Flask(__name__)  # Aquí cambia _name_ por __name__
+app = Flask(__name__) 
+app.secret_key="Esta es la clave secreta" 
+csrf= CSRFProtect()
 
+
+# Aquí cambia _name_ por __name__
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+
+@app.before_request
+def before_request():
+    g.nombre="Mario"
+    print('Before request 1')
+
+@app.after_request
+def after_request(response):
+    print('After request 3')
+    return response
 @app.route('/')
 def index():
     grupo="IDGS803"
     lista=["Juan","Pedro"]
+    print("Index 2")
+    print("Hola {}".format(g.nombre))
     return render_template("index.html",grupo=grupo,lista=lista)
 
-@app.route('/ejemplo1')
-def ejemplo1():
-    return render_template("ejemplo1.html")
+@app.route('/Alumnos',methods=["GET","POST"])
+def alumnos():
+    mat = ''
+    nom = ''
+    ape = ''
+    edad = ''
+    correo = ''
+    # va a obtener los valores que obtengamos del formulario
+    alumnos_clase = forms.UserForm(request.form)
+    #no se envia hasta que todas las validaciones esten satisfechas
+    if request.method == 'POST' and alumnos_clase.validate():
+        # obtener parametro
+        mat = alumnos_clase.matricula.data
+        nom = alumnos_clase.nombre.data
+        ape = alumnos_clase.apellidos.data
+        edad = alumnos_clase.edad.data
+        correo = alumnos_clase.correo.data
+        mensaje='Bienvenido {}'.format(nom)
+        flash(mensaje)
+    return render_template("Alumnos.html",form = alumnos_clase,mat = mat, nom = nom, ape = ape, edad = edad, correo = correo)
+
 
 @app.route('/ejemplo2')
 def ejemplo2():
@@ -100,6 +142,7 @@ def form1():
 
 # Cambia _name_ por __name__
 if __name__ == '__main__':
+    csrf.init_app(app)
     app.run(debug=True, port=300)
 
 
